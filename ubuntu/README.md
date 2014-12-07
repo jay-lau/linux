@@ -5,7 +5,7 @@
 ### Install essential packages
 
 ```
-$ sudo apt-get install vim git tree subversion gnupg sshpass whois account-plugin-irc compizconfig-settings-manager
+$ sudo apt-get install vim git tree subversion gnupg sshpass nfs-common whois account-plugin-irc compizconfig-settings-manager
 ```
 
 ### Configure VIM
@@ -226,6 +226,14 @@ $ sudo apt-get install python-deepin-gsettings indicator-screenshot
 $ mkdir -p ~/.config/autostart
 $ cp /usr/share/indicator-screenshot/indicator-screenshot.desktop ~/.config/autostart
 ```
+
+### Install package using proxy
+
+```
+$ sudo apt-get -o "Acquire::http::Proxy=http://10.10.10.104:8088" install tree
+```
+
+Reference: <https://help.ubuntu.com/community/AptGet/Howto#Setting_up_apt-get_to_use_a_http-proxy>
 
 ## Create VM for Windows
 
