@@ -1,5 +1,123 @@
 # Linux 常用命令
 
+## Apache Server 大文件 403 forbidden
+
+一般都是由于开启 SELinux 导致的，并且我只在 RHEL 上遇到过。关闭 SELinux 并重启 httpd 即可。
+
+```
+# setenforce 0
+# service httpd restart
+```
+
+## SSHD 允许以 root 用户登录
+
+```
+$ cat /etc/ssh/sshd_config
+PermitRootLogin yes
+```
+
+## sudo username 无需密码
+
+```
+$ cat /etc/sudoers
+username ALL=(ALL) NOPASSWD:ALL
+```
+
+## ls 时文件名后跟了个特殊符号
+
+```
+$ ls -F /usr/bin/diff
+/usr/bin/diff*
+$ ls -F /var/run/docker.sock
+/var/run/docker.sock=
+```
+
+当`ls`命令跟参数`-F`时会在文件名后面加上个特殊符号
+
+* directories /
+* sockets =
+* symbolic links @
+* executables *
+
+## 运行 screen 命令出错
+
+```
+Cannot open your terminal '/dev/pts/0' - please check.
+```
+
+通常是由于你`su - user`导致的，可以用标准的用户`user`登录进去运行，或者`script /dev/null`。
+
+## 将字符串分割成单个字符
+
+```
+$ echo abcd | grep -o .
+```
+
+## 修改文件名大小写
+
+```
+$ mv $file $(echo $file | tr 'A-Z' 'a-z')
+```
+
+## 配置 RHEL 路由
+
+```
+# vim /etc/sysconfig/network-scripts/route-eth0
+9.0.0.0/9 via 9.111.250.1
+```
+
+### 删除tar包解压后的文件
+
+有时你解压一下tar包时，这个tar包并没有一个主目录，结果把自己当前的目录搞混乱了，你都不知道哪个文件是从这个tar包里解压出来的了。
+
+```
+rm -rf "$(tar ztf filename.tar.gz)"
+```
+
+不过，还是有个问题，就是这个压缩包里的目录并不会被删除。
+
+### /etc/shadow 文件各字段说明
+
+```
+zhiwei:$6$jQxzk6zH$.mTIBeVixdlJ7kOgad6wci:16412:0:99999:7:::
+```
+
+As with the passwd file, each field in the shadow file is also separated with ":" colon characters, and are as follows:
+
+* Username, up to 8 characters. Case-sensitive, usually all lowercase. A direct match to the username in the /etc/passwd file.
+* Password, 13 character encrypted. A blank entry (eg. ::) indicates a password is not required to log in (usually a bad idea), and a `*` entry (eg. :*:) indicates the account has been disabled.
+* The number of days (since January 1, 1970) since the password was last changed.
+* The number of days before password may be changed (0 indicates it may be changed at any time)
+* The number of days after which password must be changed (99999 indicates user can keep his or her password unchanged for many, many years)
+* The number of days to warn user of an expiring password (7 for a full week)
+* The number of days after password expires that account is disabled
+* The number of days since January 1, 1970 that an account has been disabled
+* A reserved field for possible future use
+
+查看密码过期时间及相关信息：
+
+```
+# chage -l zhiwei
+Last password change                    : Dec 08, 2014
+Password expires                    : never
+Password inactive                   : never
+Account expires                     : never
+Minimum number of days between password change      : 0
+Maximum number of days between password change      : 90
+Number of days of warning before password expires   : 7
+```
+
+以上意思是密码至少需要每90天修改一次。
+
+你可以使用如下命令来修改密码不过期：
+
+```
+# chage -M 99999 zhiwei
+# chage zhiwei
+```
+
+或者直接编辑`/etc/shadow`文件，将第五列修改为`99999`，意思是这个密码274年之后才会过期，也就是说永不过期了。
+
 ### VIM检查文件类型
 
 ```
@@ -283,7 +401,7 @@ ls -l /proc/process_pid/cwd 命令就可以看到了
 
 lsof 是一个列出当前系统打开文件的工具。在linux环境下，任何事物都以文件的形式存在，通过文件不仅仅可以访问常规数据，还可以访问网络连接和硬件。
 
-    lsof输出各列信息的意义如下： 
+    lsof输出各列信息的意义如下：
     COMMAND：进程的名称
     PID：进程标识符
     USER：进程所有者
@@ -361,29 +479,29 @@ gzip,gunzip,uncompress,unzip
 
 第一种方法
 
-1.执行rpm -i your-package.src.rpm 
-2. cd /usr/src/redhat/SPECS 
-3. rpmbuild -bp your-package.specs 一个和你的软件包同名的specs文件 
-4. cd /usr/src/redhat/BUILD/your-package/ 一个和你的软件包同名的目录 
-5. ./configure 这一步和编译普通的源码软件一样，可以加上参数 
-6. make 
-7. make install 
+1.执行rpm -i your-package.src.rpm
+2. cd /usr/src/redhat/SPECS
+3. rpmbuild -bp your-package.specs 一个和你的软件包同名的specs文件
+4. cd /usr/src/redhat/BUILD/your-package/ 一个和你的软件包同名的目录
+5. ./configure 这一步和编译普通的源码软件一样，可以加上参数
+6. make
+7. make install
 
 第二种方法
 
-1.执行rpm -i you-package.src.rpm 
-2. cd /usr/src/redhat/SPECS 
-3. rpmbuild -bb your-package.specs 一个和你的软件包同名的specs文件 
+1.执行rpm -i you-package.src.rpm
+2. cd /usr/src/redhat/SPECS
+3. rpmbuild -bb your-package.specs 一个和你的软件包同名的specs文件
 
-这时，在/usr/src/redhat/RPM/i386/ （根据具体包的不同，也可能是x86_64,noarch等等) 
+这时，在/usr/src/redhat/RPM/i386/ （根据具体包的不同，也可能是x86_64,noarch等等)
 
-在这个目录下，有一个新的rpm包，这个是编译好的二进制文件。 
+在这个目录下，有一个新的rpm包，这个是编译好的二进制文件。
 
-执行rpm -i new-package.rpm即可安装完成。 
+执行rpm -i new-package.rpm即可安装完成。
 
 ### 打印文件树（打印目录树的话只需加上选项 -type d）
 
-    find . -print 2>/dev/null|awk '!/\.$/ {for (i=1;i<NF;i++){d=length($i);if ( d < 5 && i != 1 )d=5;printf("%"d"s","|")}print "---"$NF}' FS='/' 
+    find . -print 2>/dev/null|awk '!/\.$/ {for (i=1;i<NF;i++){d=length($i);if ( d < 5 && i != 1 )d=5;printf("%"d"s","|")}print "---"$NF}' FS='/'
 
 ### 创建指定大小的文件
 
@@ -487,12 +605,12 @@ Both of these [types of links] provide a certain measure of dual reference -- if
 
 ### 设置随机启动：
 
-    chkconfig --levels 3 httpd on 
-    chkconfig --list httpd 
-    httpd 0:off 1:off 2:off 3:on 4:off 5:off 6:off 
-    chkconfig --levels 3 mysqld on 
-    chkconfig --list mysqld 
-    mysqld 0:off 1:off 2:off 3:on 4:off 5:off 6:off 
+    chkconfig --levels 3 httpd on
+    chkconfig --list httpd
+    httpd 0:off 1:off 2:off 3:on 4:off 5:off 6:off
+    chkconfig --levels 3 mysqld on
+    chkconfig --list mysqld
+    mysqld 0:off 1:off 2:off 3:on 4:off 5:off 6:off
 
 ### 文件权限
 
@@ -580,7 +698,7 @@ Both of these [types of links] provide a certain measure of dual reference -- if
 
 修改密码命令（mysqladmin -uroot -p123456 password newpasswd）
 
-change password in safe: 
+change password in safe:
 
     # /etc/init.d/mysqld stop
     # mysqld_safe --user=mysql --skip-grant-tables --skip-networking &

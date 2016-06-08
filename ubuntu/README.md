@@ -1,54 +1,47 @@
 # Ubuntu Tips
 
-## Things after install Ubuntu
+## apt
+
+Don't install recommended and suggested packages.
+
+```
+# apt -o APT::Install-Recommends="false" -o APT::Install-Suggests="false" install nmap
+# apt --no-install-recommends install nmap
+```
+
+Don't prompt while installing package, the following is usually enough, run `dpkg --force-help` to see more if not enough.
+
+```
+# DEBIAN_FRONTEND=noninteractive apt -y --force-yes --allow-unauthenticated -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install keepalived
+# dpkg --force-help
+```
+
+Ask dpkg to install configuration file if it is currently missing.
+
+```
+# apt -o Dpkg::Options::="--force-confmiss" install keepalived
+```
+
+## Things to do after install Ubuntu
 
 ### Install essential packages
 
 ```
-$ sudo apt-get install vim git tree subversion gnupg sshpass nfs-common whois account-plugin-irc compizconfig-settings-manager
+$ sudo apt install account-plugin-irc bash-completion build-essential \
+        chromium-browser command-not-found compizconfig-settings-manager curl \
+        dns-utils git gnupg jq sshpass subversion tree vim whois
 ```
 
-### Configure VIM
-
-```
-$ cd ~
-$ mv .vim .vim.bak
-$ git clone https://github.com/chenzhiwei/dot_vim .vim
-$ ln -sf .vim/dot_vimrc .vimrc
-```
-
-### Font configure
-
-```
-$ sudo apt-get install fonts-wqy-zenhei fonts-wqy-microhei ttf-wqy-microhei ttf-wqy-zenhei xfonts-wqy
-$ sudo vim /etc/fonts/conf.avail/69-language-selector-zh-cn.conf # remove test zh-cn block
-```
-
-```
-<test name="lang">
-    <string>zh-cn</string>
-</test>
-```
-
-Download this [local fonts configure file](.fonts.conf) and put it to `~/.fonts.conf`.
-
-After this try to use this command to verify:
-
-```
-$ ls ~/.fonts.conf && echo 'Fonts configured!'
-```
 
 ### Disable HUD
 
 `System Settings` -- `Keyboard` -- `Shortcuts` -- `Launchers` -- `Key to show the HUD`
 
+
 ### Adjust screensaver timeout
 
 `System Settings` -- `Brightness` -- `Turn screen of when inactive for 30 minutes`
 
-### Disable online search result
-
-`System Settings` -- `Security & Privacy` -- `Search`
 
 ### Disable Super key
 
@@ -58,6 +51,7 @@ Open ccsm, then
 
 `Ubuntu Unity Plugin` -- `Launcher` -- `Key to show the Dash` -- `disable`
 
+
 ### Disable Guest/Remote Login
 
 ```
@@ -66,9 +60,11 @@ $ sudo vim /usr/share/lightdm/lightdm.conf.d/50-no-guest.conf
 allow-guest=false
 ```
 
-### Change Terminal border and tab
 
-I don't like the terminal border when open multiple tabs.
+### Change Terminal tabs
+
+In Ubuntu 16.04, when open multiple tabs in the terminal window, the tabs have a bigger height. Using the following css will make the tabs more coordinating in Unity Desktop Environment.
+
 
 ```
 $ mkdir -p ~/.config/gtk-3.0
@@ -78,41 +74,30 @@ $ vim ~/.config/gtk-3.0/gtk.css
 Content: `~/.config/gtk-3.0/gtk.css`
 
 ```
-@define-color normal #CCC;
-@define-color active #EEE;
-@define-color background #999;
-
-TerminalWindow.background {
-    /* Top tab bar background*/
-    background-color: shade(@background, 1);
+TerminalWindow .button {
+  /* Make the notebook tab have a smaller height */
+  padding: 2px 0;
 }
 
 TerminalWindow .notebook {
-    border: 0;
-    border-radius: 0;
-    padding: 3px 0 0 0;
-    background-color: shade(@active, 1);
+  /* Make the notebook tab a little darker */
+  padding: 0;
+  background-color: #CCC;
 }
 
 TerminalWindow .notebook tab:active {
-    background-color: shade(@active, 1);
+  /* Highlight the active tab */
+  background-color: #EEE;
 }
-
-TerminalWindow .notebook tab {
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    padding: 0 3px;
-    background-color: shade(@normal, 1);
-}
-
-/* reference: /usr/share/themes/Ambiance/gtk-3.0/apps/gnome-terminal.css */
 ```
 
 URL: <http://askubuntu.com/questions/221291/remove-ugly-fat-bazel-from-gnome-terminal-with-multiple-tabs>
 
+
 ### Use Bluetooth Transfer File
 
 There will be errors like `GDbus.Error:org.openobex.Error.Failed: Unable to request session`, so you need to run `bluez-simple-agent` command in terminal before you transfer files.
+
 
 ### Use OpenVPN on Ubuntu
 
@@ -121,6 +106,25 @@ $ sudo apt-get install openvpn network-manager-openvpn \
         network-manager-openvpn-gnome network-manager-vpnc \
         network-manager-vpnc-gnome
 ```
+
+
+### Allow root login
+
+```
+$ sudo passwd -u root # or remove the `!` in /etc/shadow
+$ sudo passwd root
+$ sudo vim /etc/ssh/sshd_config
+PermitRootLogin yes
+```
+
+
+### sudo without password
+
+```
+$ sudo vim /etc/sudoers
+zhiwei  ALL=(ALL:ALL) NOPASSWD: ALL
+```
+
 
 ### Change locale
 
@@ -139,6 +143,7 @@ If you encounter warning when run `locale` command like this `locale: Cannot set
 
 URL: <https://help.ubuntu.com/community/Locale>
 
+
 ### Edit the sound menu on the top panel
 
 ```
@@ -146,6 +151,7 @@ $ gsettings get com.canonical.indicator.sound interested-media-players
 ['rhythmbox', 'deepin-music-player']
 $ gsettings set com.canonical.indicator.sound interested-media-players "['deepin-music-player']"
 ```
+
 
 ### Ubuntu Crontab GUI Application
 
@@ -159,15 +165,16 @@ The `env DISPLAY=:0` portion will tell cron to use the current display (desktop)
 
 Link: <https://help.ubuntu.com/community/CronHowto>
 
+
 ### Use Chrome PepperFlash in Chromium
 
 Install Google Chrome
 
 ```
-$ sudo vim /etc/apt/sources.list.d/google-chrome-unstable.list
-deb http://dl.google.com/linux/chrome/deb/ stable main
+$ sudo wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+$ sudo echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
 $ sudo apt-get update
-$ sudo apt-get install google-chrome-stable chromium-browser
+$ sudo apt-get -y install google-chrome-stable chromium-browser
 $ sudo vim /etc/chromium-browser/default
 ```
 
@@ -179,25 +186,20 @@ CHROMIUM_FLAGS="--ppapi-flash-path=/opt/google/chrome/PepperFlash/libpepflashpla
 
 Link: <http://www.webupd8.org/2012/09/how-to-make-chromium-use-flash-player.html>
 
-### Install Google Earth
+
+### Fcitx can't use in Java applications
+
+Like IBM Notes, eclipse...
+
+Create a file `~/.xprofile` with following content:
 
 ```
-$ wget http://dl.google.com/dl/earth/client/current/google-earth-stable_current_amd64.deb
-$ sudo dpkg -i google-earth-stable_current_amd64.deb
-$ sudo apt-get -f install
+# export LC_ALL=zh_CN.utf8
+export XMODIFIERS=@im=fcitx
+export QT_IM_MODULE=xim
+export GTK_IM_MODULE=xim
 ```
 
-Link: <http://askubuntu.com/questions/302135/google-earth-on-13-04-ubuntu>
-
-### Ibus Wubi Table can't input phrase
-
-1.Open Ibus Preference
-
-2.Select General
-
-3.Font and Style, set Show language panel to `When active` or `Always`
-
-4.Then, when you switch to ibus, it will show the language panel, so you can set what you want.
 
 ### Ubuntu screen recorder
 
@@ -209,23 +211,15 @@ $ sudo apt-get install simplescreenrecorder
 
 Easy to use: <http://www.webupd8.org/2013/06/simplescreenrecorder-powerful-screen.html>
 
-### Install fcitx input method
+
+### Install Rime for IBus
 
 ```
-$ sudo add-apt-repository ppa:fcitx-team/nightly
-$ sudo apt-get update
-$ sudo apt-get install fcitx-sogoupinyin fcitx-table-wubi
+$ sudo apt-get install ibus-rime librime-data-wubi librime-data-pinyin-simp
 ```
 
-### Install Deepin Screenshot
+For details, check [rime](../rime/).
 
-```
-$ sudo add-apt-repository ppa:chenzhiwei/ppa
-$ sudo apt-get update
-$ sudo apt-get install python-deepin-gsettings indicator-screenshot
-$ mkdir -p ~/.config/autostart
-$ cp /usr/share/indicator-screenshot/indicator-screenshot.desktop ~/.config/autostart
-```
 
 ### Install package using proxy
 
@@ -234,6 +228,31 @@ $ sudo apt-get -o "Acquire::http::Proxy=http://10.10.10.104:8088" install tree
 ```
 
 Reference: <https://help.ubuntu.com/community/AptGet/Howto#Setting_up_apt-get_to_use_a_http-proxy>
+
+
+### Update system proxy via command line
+
+```
+$ gsettings set org.gnome.system.proxy.socks host '127.0.0.1'
+$ gsettings set org.gnome.system.proxy.socks port 1080
+$ gsettings set org.gnome.system.proxy mode 'manual'
+$ gsettings set org.gnome.system.proxy mode 'none'
+```
+
+
+## Issues
+
+* Unable to find expected entry 'main/binary-i386/Packages'
+
+    1. solution one
+
+            # dpkg --print-architecture
+            # dpkg --print-foreign-architectures
+            # dpkg --remove-architecture i386
+
+    2. solution two
+
+        deb [ arch=amd64 ] http://dl.google.com/linux/chrome/deb/ stable main
 
 ## Create VM for Windows
 
@@ -254,6 +273,7 @@ OR
 ```
 
 Link: <http://ubuntuforums.org/showthread.php?t=970385>
+
 
 ## Build Debian package and upload to Ubuntu PPA
 
