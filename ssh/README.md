@@ -114,6 +114,28 @@ Banner /etc/ssh/message_file
 
 然后`/etc/ssh/message_file`里的内容就是登录ssh server时的提示内容。
 
+
+## 用代理方式登录 SSH 服务器
+
+```
+vim ~/.ssh/config
+Host youya.org
+    User root
+    ProxyCommand nc -X 5 -x localhost:1080 %h %p
+```
+
+其中`-X 5`的意思是使用 socks5 协议，`-x localhost:1080`就是 socks5 的代理地址了，这两个都是 nc 的参数。
+
+如果你的代理是 HTTP 代理，可以这样配置：
+
+
+```
+vim ~/.ssh/config
+Host youya.org
+    User root
+    ProxyCommand nc -X connect -x localhost:3128 %h %p
+```
+
 ## Issues
 
 ### debug1: expecting SSH2_MSG_KEX_DH_GEX_GROUP
